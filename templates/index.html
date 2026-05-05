@@ -2,84 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>NANO-CORE // V7.5 BUSINESS</title>
+    <title>PSYCHO-AI // V8.7 COMPACT</title>
     <style>
-        :root { --bg: #010204; --cyan: #00f2ff; --pink: #ff0055; --green: #00ff66; --yellow: #f0ff00; }
-        body {
-            background: var(--bg); color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 15px;
-            background-image: linear-gradient(rgba(0, 242, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.03) 1px, transparent 1px);
-            background-size: 30px 30px;
-        }
-        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #222; margin-bottom: 20px; padding: 10px; font-size: 0.8rem; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .widget { background: #08080a; border: 1px solid #1a1a1a; position: relative; border-bottom: 5px solid var(--signal-color); transition: all 0.3s; }
-        .widget.active-snipe { animation: pulse-glow 1s infinite; }
-        @keyframes pulse-glow { 0% { box-shadow: 0 0 5px var(--signal-color); } 50% { box-shadow: 0 0 25px var(--signal-color); } 100% { box-shadow: 0 0 5px var(--signal-color); } }
-        .price { font-size: 2.2rem; font-family: monospace; margin: 5px 0; font-weight: bold; }
-        .action-zone { margin-top: 15px; padding: 12px; text-align: center; font-weight: 900; color: #000; background: var(--signal-color); }
-        .hazard { height: 6px; background: repeating-linear-gradient(45deg, var(--yellow), var(--yellow) 10px, #000 10px, #000 20px); }
-        .badge { font-size: 0.6rem; color: var(--yellow); border: 1px solid var(--yellow); padding: 2px 5px; }
+        :root { --bg: #030008; --p-purple: #8a2be2; --p-blue: #00d4ff; --p-orange: #ff8c00; --p-green: #00ff9d; }
+        body { background: var(--bg); color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 10px; font-size: 14px; overflow-x: hidden; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--p-purple); padding: 5px 15px; margin-bottom: 15px; }
+        #clock { font-size: 1.2rem; color: var(--p-blue); font-family: monospace; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+        .widget { background: rgba(15, 0, 30, 0.95); border: 1px solid #222; border-left: 5px solid var(--color); padding: 12px; position: relative; transition: 0.2s; }
+        .widget.active { border: 1.5px solid var(--color); box-shadow: inset 0 0 15px var(--color); animation: glitch 0.2s infinite alternate; }
+        @keyframes glitch { from { transform: translate(0); } to { transform: translate(1px, -1px); } }
+        .asset-header { display: flex; justify-content: space-between; align-items: center; }
+        .price { font-size: 2.1rem; font-weight: 900; font-family: monospace; margin: 2px 0; letter-spacing: -1px; }
+        .lev-tag { background: var(--p-orange); color: #000; padding: 1px 6px; font-weight: 900; font-size: 0.8rem; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
+        .stat-box { background: #000; padding: 4px; border: 1px solid #111; text-align: center; }
+        .stat-val { font-size: 0.9rem; display: block; color: var(--p-blue); font-weight: bold; }
+        .stat-lbl { font-size: 0.5rem; color: #555; text-transform: uppercase; }
+        .instr-bar { margin-top: 10px; padding: 8px; text-align: center; background: var(--color); color: #000; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; }
+        .state-tag { font-size: 0.6rem; color: var(--color); font-weight: bold; }
+        .hb { width: 8px; height: 8px; border-radius: 50%; background: #222; display: inline-block; transition: 0.2s; }
+        .hb.on { background: var(--p-green); box-shadow: 0 0 8px var(--p-green); }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="header">
-        <div>30M INTERVAL // <span style="color:var(--yellow)">DYNAMIC ROTATION ACTIVE</span></div>
-        <div id="sync">SYNCING RADAR...</div>
+        <div><span class="hb" id="hb"></span> PSYCHO-MASTER // V8.7 COMPACT</div>
+        <div id="clock">00:00:00</div>
     </div>
-    <div class="grid" id="main-grid"></div>
-
+    <div class="grid" id="master-grid"></div>
     <script>
-        const originalTitle = document.title;
-        let alertInterval = null;
-
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) { clearInterval(alertInterval); alertInterval = null; document.title = originalTitle; }
-        });
-
-        function flashAlert() {
-            if (document.hidden && !alertInterval) {
-                alertInterval = setInterval(() => { document.title = document.title === "!!! SNIPE !!!" ? "CHECK BUSINESS" : "!!! SNIPE !!!"; }, 1000);
-            }
-        }
-
-        async function update() {
+        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); setTimeout(updateClock, 1000); }
+        async function updateData() {
+            const hb = document.getElementById('hb');
             try {
                 const res = await fetch('/api/data');
                 const data = await res.json();
-                const grid = document.getElementById('main-grid');
+                const grid = document.getElementById('master-grid');
                 grid.innerHTML = '';
-                let snipeDetected = false;
-
                 data.forEach(item => {
-                    const isSnipe = item.instruction.includes("SNIPE");
-                    if (isSnipe) snipeDetected = true;
-
+                    const isSnipe = item.instr === 'SNIPE';
                     const div = document.createElement('div');
-                    div.className = `widget ${isSnipe ? 'active-snipe' : ''}`;
-                    div.style.setProperty('--signal-color', item.signal_color);
+                    div.className = `widget ${isSnipe ? 'active' : ''}`;
+                    div.style.setProperty('--color', item.color);
                     div.innerHTML = `
-                        <div class="hazard"></div>
-                        <div class="content" style="padding:15px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-size:1.4rem; color:var(--cyan); font-weight:900;">${item.asset}</span>
-                                ${item.tag === 'TOP MOVER' ? '<span class="badge">ALPHA MOVER</span>' : ''}
-                            </div>
-                            <div class="price">$${item.price}</div>
-                            <div style="color:${item.delta.includes('+') ? '#0f0':'#f00'}; font-size:0.9rem;">${item.delta}</div>
-                            <div class="action-zone">${item.instruction} [${item.action_type}]</div>
+                        <div class="asset-header">
+                            <span style="font-size:1.1rem; font-weight:900; color:var(--p-blue)">${item.asset}</span>
+                            <span class="state-tag">${item.state}</span>
+                            <span class="lev-tag">${item.lev}</span>
                         </div>
+                        <div class="price">$${item.price}</div>
+                        <div class="stat-grid">
+                            <div class="stat-box"><span class="stat-val">${item.sqz}</span><span class="stat-lbl">SQZ</span></div>
+                            <div class="stat-box"><span class="stat-val">${item.adx}</span><span class="stat-lbl">ADX</span></div>
+                            <div class="stat-box"><span class="stat-val">${item.rsi}</span><span class="stat-lbl">RSI</span></div>
+                        </div>
+                        <div class="stat-grid" style="margin-top:4px">
+                            <div class="stat-box"><span class="stat-val" style="color:var(--p-orange)">${item.atr}</span><span class="stat-lbl">ATR</span></div>
+                            <div class="stat-box"><span class="stat-val">${item.bw}</span><span class="stat-lbl">BW</span></div>
+                            <div class="stat-box"><span class="stat-val" style="color:var(--p-green)">LINK</span><span class="stat-lbl">NET</span></div>
+                        </div>
+                        <div class="instr-bar">${item.instr}</div>
                     `;
                     grid.appendChild(div);
                 });
-
-                if (snipeDetected) flashAlert();
-                document.getElementById('sync').innerText = "RADAR SYNC: " + new Date().toLocaleTimeString();
-            } catch (e) { console.error(e); }
+                hb.classList.add('on'); setTimeout(()=>hb.classList.remove('on'), 500);
+            } catch (e) { console.error("Neural Desync:", e); }
         }
-
-        setInterval(update, 5000);
-        update();
+        updateClock(); updateData(); setInterval(updateData, 4000);
     </script>
 </body>
 </html>
