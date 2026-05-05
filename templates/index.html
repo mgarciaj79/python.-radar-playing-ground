@@ -1,76 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>PSYCHO-AI // V8.7 COMPACT</title>
-    <style>
-        :root { --bg: #030008; --p-purple: #8a2be2; --p-blue: #00d4ff; --p-orange: #ff8c00; --p-green: #00ff9d; }
-        body { background: var(--bg); color: #fff; font-family: 'Orbitron', sans-serif; margin: 0; padding: 10px; font-size: 14px; overflow-x: hidden; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--p-purple); padding: 5px 15px; margin-bottom: 15px; }
-        #clock { font-size: 1.2rem; color: var(--p-blue); font-family: monospace; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
-        .widget { background: rgba(15, 0, 30, 0.95); border: 1px solid #222; border-left: 5px solid var(--color); padding: 12px; position: relative; transition: 0.2s; }
-        .widget.active { border: 1.5px solid var(--color); box-shadow: inset 0 0 15px var(--color); animation: glitch 0.2s infinite alternate; }
-        @keyframes glitch { from { transform: translate(0); } to { transform: translate(1px, -1px); } }
-        .asset-header { display: flex; justify-content: space-between; align-items: center; }
-        .price { font-size: 2.1rem; font-weight: 900; font-family: monospace; margin: 2px 0; letter-spacing: -1px; }
-        .lev-tag { background: var(--p-orange); color: #000; padding: 1px 6px; font-weight: 900; font-size: 0.8rem; }
-        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px; }
-        .stat-box { background: #000; padding: 4px; border: 1px solid #111; text-align: center; }
-        .stat-val { font-size: 0.9rem; display: block; color: var(--p-blue); font-weight: bold; }
-        .stat-lbl { font-size: 0.5rem; color: #555; text-transform: uppercase; }
-        .instr-bar { margin-top: 10px; padding: 8px; text-align: center; background: var(--color); color: #000; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; }
-        .state-tag { font-size: 0.6rem; color: var(--color); font-weight: bold; }
-        .hb { width: 8px; height: 8px; border-radius: 50%; background: #222; display: inline-block; transition: 0.2s; }
-        .hb.on { background: var(--p-green); box-shadow: 0 0 8px var(--p-green); }
-    </style>
+    <title>SHARKY V12.7 // TURBO</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #010103; --p-purple: #8A2BE2; --p-orange: #FF8C00; --p-green: #00FF7F; --p-red: #FF3131; --p-blue: #00E5FF; }
+        body { background: var(--bg); color: #fff; font-family: 'Orbitron', sans-serif; padding: 15px; margin: 0; }
+        .header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--p-purple); padding-bottom: 10px; margin-bottom: 15px; }
+        #terminal { background: #000; border: 1px solid var(--p-purple); height: 80px; overflow-y: auto; margin-bottom: 20px; padding: 10px; font-family: monospace; color: var(--p-green); font-size: 0.75rem; border-radius: 4px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+        .widget { background: #08080E; border: 1px solid #1A1A2E; border-top: 5px solid var(--color); padding: 18px; border-radius: 4px; text-align: center; position: relative; transition: 0.3s; }
+        .widget.snipe-active { border: 2px solid var(--p-green); animation: strobe 1s infinite; }
+        @keyframes strobe { 0% { box-shadow: 0 0 5px var(--p-green); } 50% { box-shadow: 0 0 25px var(--p-green); } 100% { box-shadow: 0 0 5px var(--p-green); } }
+        .price { font-size: 2.2rem; font-weight: 900; color: #fff; font-family: monospace; margin: 5px 0; }
+        .gauge-wrap { position: relative; width: 160px; height: 90px; margin: 10px auto; overflow: hidden; border-bottom: 1px solid #333; }
+        .gauge-bg { width: 160px; height: 160px; border: 10px solid #111; border-radius: 50%; position: absolute; top: 0; left: 0; box-sizing: border-box; border-bottom-color: transparent; border-left-color: var(--p-purple); border-right-color: var(--p-red); border-top-color: var(--p-orange); opacity: 0.2; }
+        .needle { width: 3px; height: 70px; background: var(--p-blue); position: absolute; bottom: 0; left: 50%; transform-origin: bottom center; transition: transform 1.2s cubic-bezier(0.1, 0.7, 0.1, 1); box-shadow: 0 0 8px var(--p-blue); }
+        .needle-hub { width: 10px; height: 10px; background: #fff; border-radius: 50%; position: absolute; bottom: -5px; left: calc(50% - 5px); z-index: 10; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+        .box { background: #000; padding: 8px; border: 1px solid #1A1A2E; text-align: center; }
+        .val { display: block; font-size: 0.8rem; font-weight: 900; color: var(--p-blue); }
+        .lbl { font-size: 0.5rem; color: #555; text-transform: uppercase; }
+        #clock { color: var(--p-blue); font-weight: 900; }
+    </style>
 </head>
 <body>
     <div class="header">
-        <div><span class="hb" id="hb"></span> PSYCHO-MASTER // V8.7 COMPACT</div>
+        <div style="font-weight: 900; letter-spacing: 2px; color: var(--p-purple);">SHARKY-PRO <span style="color:#fff">V12.7 // TURBO-CHARGE</span></div>
         <div id="clock">00:00:00</div>
     </div>
-    <div class="grid" id="master-grid"></div>
+    <div id="terminal"><div class="term-entry">[SYSTEM] Terminal Online. Tracking $81.6k Expansion.</div></div>
+    <div class="grid" id="grid"></div>
+
     <script>
-        function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); setTimeout(updateClock, 1000); }
-        async function updateData() {
-            const hb = document.getElementById('hb');
+        function clock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }
+        setInterval(clock, 1000);
+
+        async function refresh() {
             try {
-                const res = await fetch('/api/data');
-                const data = await res.json();
-                const grid = document.getElementById('master-grid');
-                grid.innerHTML = '';
-                data.forEach(item => {
-                    const isSnipe = item.instr === 'SNIPE';
-                    const div = document.createElement('div');
-                    div.className = `widget ${isSnipe ? 'active' : ''}`;
-                    div.style.setProperty('--color', item.color);
-                    div.innerHTML = `
-                        <div class="asset-header">
-                            <span style="font-size:1.1rem; font-weight:900; color:var(--p-blue)">${item.asset}</span>
-                            <span class="state-tag">${item.state}</span>
-                            <span class="lev-tag">${item.lev}</span>
+                const r = await fetch('/api/data');
+                const data = await r.json();
+                const grid = document.getElementById('grid');
+                const term = document.getElementById('terminal');
+
+                grid.innerHTML = data.map(item => {
+                    if (item.alert_msg) {
+                        const entry = document.createElement('div');
+                        entry.className = "term-entry";
+                        entry.innerHTML = `<span style="color:#666">[${new Date().toLocaleTimeString()}]</span> <span style="color:${item.color}">${item.alert_msg}</span>`;
+                        term.prepend(entry);
+                        if (term.childNodes.length > 15) term.lastChild.remove();
+                    }
+
+                    return `
+                        <div class="widget ${item.is_snipe ? 'snipe-active' : ''}" style="--color:${item.color}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:900; font-size:1.4rem; color:var(--p-blue)">${item.asset}</span>
+                                <span style="color:#FFD700; font-size:0.7rem; font-weight:900;">MAX LEV: ${item.max_lev}</span>
+                            </div>
+                            <div class="price">$${item.price.toFixed(4)}</div>
+                            <div class="gauge-wrap">
+                                <div class="gauge-bg"></div>
+                                <div class="needle" style="transform: rotate(${item.rotation}deg)"></div>
+                                <div class="needle-hub"></div>
+                            </div>
+                            <div class="stat-grid">
+                                <div class="box"><span class="val">${item.atr}</span><span class="lbl">ATR</span></div>
+                                <div class="box"><span class="val">${item.adx}</span><span class="lbl">ADX</span></div>
+                                <div class="box"><span class="val">${item.rsi}</span><span class="lbl">RSI</span></div>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-top:10px;">
+                                <div class="box" style="border-top:2px solid var(--p-green)"><span class="lbl">Target</span><span class="val" style="color:var(--p-green)">$${item.target.toFixed(4)}</span></div>
+                                <div class="box" style="border-top:2px solid var(--p-red)"><span class="lbl">Stop</span><span class="val" style="color:var(--p-red)">$${item.stop.toFixed(4)}</span></div>
+                            </div>
                         </div>
-                        <div class="price">$${item.price}</div>
-                        <div class="stat-grid">
-                            <div class="stat-box"><span class="stat-val">${item.sqz}</span><span class="stat-lbl">SQZ</span></div>
-                            <div class="stat-box"><span class="stat-val">${item.adx}</span><span class="stat-lbl">ADX</span></div>
-                            <div class="stat-box"><span class="stat-val">${item.rsi}</span><span class="stat-lbl">RSI</span></div>
-                        </div>
-                        <div class="stat-grid" style="margin-top:4px">
-                            <div class="stat-box"><span class="stat-val" style="color:var(--p-orange)">${item.atr}</span><span class="stat-lbl">ATR</span></div>
-                            <div class="stat-box"><span class="stat-val">${item.bw}</span><span class="stat-lbl">BW</span></div>
-                            <div class="stat-box"><span class="stat-val" style="color:var(--p-green)">LINK</span><span class="stat-lbl">NET</span></div>
-                        </div>
-                        <div class="instr-bar">${item.instr}</div>
                     `;
-                    grid.appendChild(div);
-                });
-                hb.classList.add('on'); setTimeout(()=>hb.classList.remove('on'), 500);
-            } catch (e) { console.error("Neural Desync:", e); }
+                }).join('');
+            } catch (e) { console.error("Refresh Error:", e); }
         }
-        updateClock(); updateData(); setInterval(updateData, 4000);
+        setInterval(refresh, 5000); refresh(); clock();
     </script>
 </body>
 </html>
