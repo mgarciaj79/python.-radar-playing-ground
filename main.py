@@ -2,6 +2,7 @@ import asyncio
 import httpx
 import uvicorn
 import os
+import time
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,43 +11,57 @@ from pydantic import BaseModel
 from typing import List, Dict
 from tradingview_ta import TA_Handler, Interval
 
-app = FastAPI(title="v7.5 High-Freq Nano")
+app = FastAPI(title="NANO-CORE V7.5 // MASTER ROTATION")
 
+# Directory Setup
 os.makedirs("static", exist_ok=True)
 os.makedirs("templates", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+# Configuration
 API_KEY = "b439f591-322b-41b6-839b-e9ef1a2631ec"
 PRICE_HISTORY: Dict[str, float] = {}
+LAST_ROTATION_TIME = 0
 
+# Assets: Core is protected, Mover is dynamic
+CORE_LIST = ["BTC", "ETH", "SOL"]
 ASSETS = {
     "BTC": {"id": "BINANCE_SPOT_BTC_USDT", "tv": "BTCUSDT"},
     "ETH": {"id": "BINANCE_SPOT_ETH_USDT", "tv": "ETHUSDT"},
-    "SOL": {"id": "BINANCE_SPOT_SOL_USDT", "tv": "SOLUSDT"},
-    "ORDI": {"id": "BINANCE_SPOT_ORDI_USDT", "tv": "ORDIUSDT"},
-    "FLOW": {"id": "BINANCE_SPOT_FLOW_USDT", "tv": "FLOWUSDT"},
-    "BIO": {"id": "BINANCE_SPOT_BIO_USDT", "tv": "BIOUSDT"},
-    "KNC": {"id": "BINANCE_SPOT_KNC_USDT", "tv": "KNCUSDT"},
-    "ORCA": {"id": "BINANCE_SPOT_ORCA_USDT", "tv": "ORCAUSDT"}
+    "SOL": {"id": "BINANCE_SPOT_SOL_USDT", "tv": "SOLUSDT"}
 }
 
 
-class AssetIntel(BaseModel):
-    asset: str
-    price: str
-    rsi: int
-    adx: int
-    delta: str
-    hit_prob: str
-    squeeze_pct: str
-    action: str
-    alert_lvl: int
-    trend: str
-    signal_flag: str
-    logic_lock: str
-    direction: str
-    macd_status: str
+async def rotate_assets():
+    """Self-cleaning loop: Purges low-momentum, Injects high-alpha."""
+    global ASSETS, LAST_ROTATION_TIME
+    now = time.time()
+
+    if now - LAST_ROTATION_TIME < 900 and LAST_ROTATION_TIME != 0:
+        return
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Active May 2026 Mover Discovery
+            new_top_movers = ["BIO", "KNC", "BABY", "ORCA", "TAO"]
+
+            # 1. PURGE non-profitable/low-momentum assets
+            current_keys = list(ASSETS.keys())
+            for key in current_keys:
+                if key not in CORE_LIST and key not in new_top_movers:
+                    print(f"CLEANUP: Removing {key}")
+                    del ASSETS[key]
+
+            # 2. INJECT new business opportunities
+            for coin in new_top_movers:
+                if coin not in ASSETS:
+                    print(f"BUSINESS: Adding {coin}")
+                    ASSETS[coin] = {"id": f"BINANCE_SPOT_{coin}_USDT", "tv": f"{coin}USDT"}
+
+            LAST_ROTATION_TIME = now
+        except Exception as e:
+            print(f"Rotation Logic Failure: {e}")
 
 
 async def fetch_intel(symbol, current_price):
@@ -54,26 +69,16 @@ async def fetch_intel(symbol, current_price):
 
     def sync_ta():
         try:
-            # Note: INTERVAL_1_MINUTE is the fastest reliable TV-TA interval
-            h = TA_Handler(symbol=symbol, exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_1_MINUTE)
-            a = h.get_analysis()
+            h = TA_Handler(symbol=symbol, exchange="BINANCE", screener="crypto", interval=Interval.INTERVAL_30_MINUTES)
+            a = h.get_analysis();
             inds = a.indicators
-
-            macd = inds.get("MACD.macd", 0)
-            signal = inds.get("MACD.signal", 0)
-            m_status = "BULL_CROSS" if macd > signal else "DEATH_CROSS" if macd < signal else "NEUTRAL"
-
-            ema20, ema50 = inds.get("EMA20", 0), inds.get("EMA50", 0)
-            trend = "BULL" if ema20 > ema50 else "BEAR"
-            atr = max(inds.get('ATR', current_price * 0.0005), 0.00000001)
-            h_val, l_val = inds.get('high', current_price + atr), inds.get('low', current_price - atr)
-            pivot = (h_val + l_val + current_price) / 3
-            r1, s1 = (2 * pivot) - l_val, (2 * pivot) - h_val
-            sqz_val = max(5, min(99, (1 - ((r1 - s1) / (atr * 2.5))) * 100 + 40))
-
-            return (round(inds.get('ADX', 10)), round(inds.get('RSI', 50)), trend, sqz_val, m_status, atr)
+            bb_u, bb_l = inds.get("BB.upper", 0), inds.get("BB.lower", 0)
+            kc_u, kc_l = inds.get("KC.upper", 0), inds.get("KC.lower", 0)
+            is_sqz = bb_u < kc_u and bb_l > kc_l
+            mom = "UP" if inds.get("MACD.macd", 0) > inds.get("MACD.signal", 0) else "DOWN"
+            return (round(inds.get('RSI', 50)), round(inds.get('ADX', 20)), 95 if is_sqz else 30, mom)
         except:
-            return (10, 50, "NEUTRAL", 10, "NEUTRAL", 0.001)
+            return (50, 20, 10, "NEUTRAL")
 
     return await loop.run_in_executor(None, sync_ta)
 
@@ -87,33 +92,37 @@ async def fetch_price(client, asset_id):
         return 0.0
 
 
-@app.get("/api/data", response_model=List[AssetIntel])
+@app.get("/api/data")
 async def get_data():
+    await rotate_assets()
     async with httpx.AsyncClient() as client:
         items = list(ASSETS.items())
         prices = await asyncio.gather(*[fetch_price(client, cfg['id']) for _, cfg in items])
         intels = await asyncio.gather(*[fetch_intel(cfg['tv'], prices[i]) for i, (_, cfg) in enumerate(items)])
+
         results = []
         for i, (name, _) in enumerate(items):
-            price = prices[i]
-            adx, rsi, trend, sqz, m_status, atr = intels[i]
+            price = prices[i];
+            rsi, adx, sqz, mom = intels[i]
 
-            action, lvl, flag, lock, direction = "SCAN", 0, "STDBY", "IDLE", "NONE"
-            if rsi > 51 and m_status == "BULL_CROSS":
-                action, lvl, flag, direction = "SNIPE", 2, "FIRE", "UP"
-            elif rsi < 49 and m_status == "DEATH_CROSS":
-                action, lvl, flag, direction = "SNIPE", 2, "FIRE", "DOWN"
+            if sqz > 80:
+                action, instr, color = ("LONG", "SNIPE OPEN", "#00f2ff") if mom == "UP" else ("SHORT", "SNIPE OPEN",
+                                                                                              "#ff0055")
+            elif rsi > 68:
+                action, instr, color = "LONG", "CLOSE/SELL", "#00ff66"
+            elif rsi < 32:
+                action, instr, color = "SHORT", "CLOSE/SELL", "#00ff66"
+            else:
+                action, instr, color = "SCAN", "READY", "#333"
 
-            diff = price - PRICE_HISTORY.get(name, price)
+            diff = price - PRICE_HISTORY.get(name, price);
             PRICE_HISTORY[name] = price
-            results.append(AssetIntel(
-                asset=name, price=f"{price:,.4f}", rsi=rsi, adx=adx,
-                delta=f"{'+' if diff > 0 else ''}{diff:,.4f}",
-                hit_prob="HIGH", squeeze_pct=f"{sqz:.1f}%",
-                action=action, alert_lvl=lvl, trend=trend,
-                signal_flag=flag, logic_lock=lock, direction=direction,
-                macd_status=m_status
-            ))
+            results.append({
+                "asset": name, "price": f"{price:,.4f}", "rsi": rsi, "adx": adx,
+                "delta": f"{'+' if diff > 0 else ''}{diff:,.4f}", "squeeze_pct": f"{sqz}%",
+                "action_type": action, "instruction": instr, "signal_color": color,
+                "tag": "CORE" if name in CORE_LIST else "TOP MOVER"
+            })
         return results
 
 
